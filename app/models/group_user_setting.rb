@@ -1,0 +1,2 @@
+class GroupUserSetting < ApplicationRecord
+end

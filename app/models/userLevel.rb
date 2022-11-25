@@ -1,0 +1,3 @@
+class UserLevel < ApplicationRecord
+    
+end

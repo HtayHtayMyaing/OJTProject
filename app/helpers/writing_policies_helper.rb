@@ -1,0 +1,2 @@
+module WritingPoliciesHelper
+end
