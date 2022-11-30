@@ -8,7 +8,6 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import Highlighter from "react-highlight-words";
-import Item from "antd/lib/list/Item.js";
 
 class listGroup extends Component {
   state = {
@@ -48,14 +47,14 @@ class listGroup extends Component {
             size="small"
             style={{ width: 90 }}
           >
-            Search
+            検索
           </Button>
           <Button
             onClick={() => this.handleReset(clearFilters)}
             size="small"
             style={{ width: 90 }}
           >
-            Reset
+            リセット
           </Button>
           <Button
             type="link"
@@ -68,7 +67,7 @@ class listGroup extends Component {
               });
             }}
           >
-            Filter
+            フィルター
           </Button>
         </Space>
       </div>
@@ -123,6 +122,11 @@ class listGroup extends Component {
         key: "id",
       },
       {
+        title: "updated_user",
+        dataIndex: "updated_user",
+        key: "updated_user",
+      },
+      {
         title: "番号",
         dataIndex: "sr",
         key: "sr",
@@ -159,8 +163,8 @@ class listGroup extends Component {
             <Popconfirm
               title={I18n.t("message.M006")}
               onConfirm={() => this.props.deleteStatus(record)}
-              okText="Yes"
-              cancelText="No"
+              okText="OK"
+              cancelText="キャンセル"
             >
               <Tooltip placement="topLeft" title="削除" color="blue">
                 <a href="#" type="danger">
@@ -171,7 +175,9 @@ class listGroup extends Component {
           </Space>
         ),
       },
-    ].filter((col) => col.dataIndex !== "id");
+    ].filter(
+      (col) => col.dataIndex !== "id" && col.dataIndex !== "updated_user"
+    );
     return (
       <>
         <Table

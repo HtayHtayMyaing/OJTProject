@@ -61,6 +61,7 @@ class Group extends React.Component {
               id: group.id,
               name: group.group_name,
               description: group.group_description,
+              updated_user: group.updated_user,
             };
             this.setState((prevState) => ({
               groups: [...prevState.groups, newEl],
@@ -104,6 +105,8 @@ class Group extends React.Component {
           });
           this.setState({ groups: ItemsCopy });
           this.updateItem(data.groups.id, data.groups);
+          //フォーム値を解除する。
+          currentForm.current.resetFields();
         } else if (data.editable == 0) {
           //データ更新に失敗した場合、エラーメッセージを表示する。
           if (data.message == "M009") {
@@ -120,6 +123,14 @@ class Group extends React.Component {
               messageType: "error",
               visible: true,
             });
+          }
+          //他ユーザより更新されている場合、、メッセージを表示する。
+          else if (data.message == "M076") {
+            this.setState({
+              message: "他ユーザより更新されています。",
+              messageType: "error",
+              visible: true,
+            });
           } else {
             //更新が失敗の場合エラーメッセージを表示する
             this.setState({
@@ -130,8 +141,6 @@ class Group extends React.Component {
           }
         }
       });
-    //フォーム値を解除する。
-    currentForm.current.resetFields();
   };
 
   //一覧に値を更新する
@@ -163,7 +172,12 @@ class Group extends React.Component {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(values),
+      body: JSON.stringify({
+        group_name: values.group_name,
+        group_description: values.group_description,
+        id: values.id,
+        updated_user: values.updated_user,
+      }),
     })
       .then((data) => {
         if (data.ok) {
@@ -203,10 +217,10 @@ class Group extends React.Component {
             messageType: "success",
             visible: true,
           });
+          //フォーム値を解除する。
+          currentForm.current.resetFields();
         }
       });
-    //フォーム値を解除する。
-    currentForm.current.resetFields();
   };
 
   //データを削除する
@@ -232,13 +246,22 @@ class Group extends React.Component {
               messageType: "error",
               visible: true,
             });
-          } else if ((data.message = "M059")) {
+          } else if (data.message == "M059") {
             //削除が失敗の場合エラーメッセージをひょうじする
             this.setState({
               message: I18n.t("message.M059"),
               messageType: "error",
               visible: true,
             });
+          } else if (data.message == "M077") {
+            //グループが削除されている場合、エラーメッセージをひょうじする
+            this.setState({
+              message: "他ユーザより削除されています。",
+              messageType: "error",
+              visible: true,
+            });
+            //一覧で削除する
+            this.removeGroupFromList(e.id);
           }
         } else {
           //削除が成功の後でメッセージを表示する
@@ -258,11 +281,40 @@ class Group extends React.Component {
 
   //更新の値をFormに設定する
   editStatus = (e) => {
-    this.formRef.current.setFieldsValue({
-      group_name: e.name,
-      group_description: e.description,
-      id: e.id,
-    });
+    //取得グループ情報
+    fetch(`/api/v1/group/getGroupByID/${e.id}`)
+      .then((data) => {
+        if (data.ok) {
+          return data.json();
+        }
+        throw new Error("Network error.");
+      })
+      .then((data) => {
+        if (data.errStatus == "0") {
+          this.formRef.current.setFieldsValue({
+            group_name: data.groups.group_name,
+            group_description: data.groups.group_description,
+            id: data.groups.id,
+            updated_user: data.groups.updated_user,
+          });
+        } else {
+          if (data.message == "M074") {
+            //取得データが存在しないの場合エラーメッセージを表示する
+            this.setState({
+              message: "該当データありません。",
+              messageType: "error",
+              visible: true,
+            });
+          } else {
+            //データ取得に失敗下の場合エラーメッセージを表示する。
+            this.setState({
+              message: "取得に失敗ししました。",
+              messageType: "error",
+              visible: true,
+            });
+          }
+        }
+      });
     this.setState({ editStatus: true });
     this.handleClose();
     window.scrollTo(0, 0);

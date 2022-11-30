@@ -19,6 +19,7 @@ Rails.application.routes.draw do
       put 'group/update/:id' => "group#update"
 
       get 'group/get/:group_name' => "group#get"
+      get 'group/getGroupByID/:id' => "group#getGroupByID"
     
     end
   end 

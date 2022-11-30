@@ -90,9 +90,12 @@ class groupEntry extends React.Component {
                 <Form.Item name="id" hidden={true}>
                   <Input type="text" />
                 </Form.Item>
+                <Form.Item name="updated_user" hidden={true}>
+                  <Input type="text" />
+                </Form.Item>
                 <Form.Item
                   wrapperCol={{
-                    offset: 8,
+                    offset: 5,
                     span: 16,
                   }}
                 >

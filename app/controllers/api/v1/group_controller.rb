@@ -1,5 +1,5 @@
 class Api::V1::GroupController < ApplicationController
-  before_action :set_group, only: %i[ show edit update destroy ]
+  #before_action :set_group, only: %i[ show edit update destroy ]
   skip_before_action :verify_authenticity_token
     def index
       begin
@@ -7,7 +7,7 @@ class Api::V1::GroupController < ApplicationController
         if @groups.length==0
           #グループデータがないと、メッセージを表示する。
           render json: {
-            error: "No Data",message:"M075",errSatus:"1"
+            error: "No Data",message:"M075",errStatus:"1"
           }, status: :ok
         else
           render json: {groups:@groups, errStatus:"0"} 
@@ -55,10 +55,17 @@ class Api::V1::GroupController < ApplicationController
     def destroy
       begin
         @groups = Group.find(params[:id]) 
-        @groups.del_flg=1
-        @groups.updated_user = 3
-        @groups.update(group_params) 
-        render json:  {groups:@groups, errStatus:"0"}
+        if(@groups.del_flg==1)
+          #グループが削除されているか。
+          render json: {
+            message:"M077",errStatus:"1"
+          }, status: :ok 
+        else
+          @groups.del_flg=1
+          @groups.updated_user = 3
+          @groups.update(group_params) 
+          render json:  {groups:@groups, errStatus:"0"}
+        end
       rescue ActiveRecord::RecordNotFound => e  
         #グループid が存在しないと、メッセージを表示する。
         render json: {
@@ -80,33 +87,69 @@ class Api::V1::GroupController < ApplicationController
     #データベースにグループデータを更新する。
     def update
       begin
-        #グループ名が存在するかどうか、チャックする。
-        @groupsName = Group.where('group_name= ? and  id!=?',params[:group_name],params[:id])
-        if @groupsName.length==0
-          #グループ名が既にテーブル「group」にない場合テーブルに更新する
-          @groups = Group.find(params[:id])      
-          @del_flg=@groups.del_flg
-          if(@del_flg==0)
-            @groups.updated_user = 2
-            @groups.update(group_params)
-            render json:  {groups:@groups,editable:1}
+          @groups = Group.find(params[:id])  
+          if @groups.updated_user!=params[:updated_user]
+            #他ユーザより更新されている場合
+            render json: {
+                message:"M076",errStatus:"0",editable:0
+              }, status: :ok
           else
-            render json:{editable:0,message:"グループ名が存在しません。"}
+             #グループ名が存在するかどうか、チャックする。
+            @groupsName = Group.where('group_name= ? and  id!=?',params[:group_name],params[:id])
+            if @groupsName.length==0
+              #グループ名が既にテーブル「group」にない場合テーブルに更新する
+              @del_flg=@groups.del_flg
+              if(@del_flg==0)
+                @groups.updated_user = 2
+                group_param = group_params.to_h
+                group_param[:updated_user] = 2
+                @groups.update(group_param)
+                render json:  {groups:@groups,editable:1}
+              else
+                render json:{editable:0,message:"グループ名が存在しません。"}
+              end
+            else
+              #グループ名が既にテーブル「group」に存在する場合、メッセージを表示する。
+              render json: {
+                message:"M009",errStatus:"0",editable:0
+              }, status: :ok
+            end
           end
-        else
-          #グループ名が既にテーブル「group」に存在する場合、メッセージを表示する。
-          render json: {
-            message:"M009",errStatus:"0",editable:0
-          }, status: :ok
-        end
-        
       rescue => e
          #例外エラーすると、メッセージを表示する。
          render json: {
           message:"M058",errStatus:"0",editable:0
         }, status: :ok
       end
-       
+    end
+
+    #取得グループ情報
+    def getGroupByID
+      begin
+        #グループid が存在しないと、メッセージを表示する。
+        @groupsData = Group.where('del_flg=0 and  id=?',params[:id])
+        if @groupsData.length==0
+          render json:{message:"M074",errStatus:"1"}
+        else
+          @groups = Group.find(params[:id]) 
+          render json: {groups:@groups,errStatus:"0"}
+        end
+      rescue ActiveRecord::RecordNotFound => e  
+        #グループid が存在しないと、メッセージを表示する。
+        render json: {
+          error: "No Data",message:"M074",errStatus:"1"
+        }, status: :ok   
+      rescue ActiveRecord::StatementInvalid => e
+         #SQL構文がまちがうと、メッセージを表示する。
+        render json: {
+          error: "No Data",message:"M059",errStatus:"1"
+        }, status: :ok   
+      rescue => e
+         #例外エラーすると、メッセージを表示する。
+        render json: {
+          error: "DB Error",message:"M059",errStatus:"1"
+        }, status: :ok   
+      end
     end
 
     private
@@ -117,6 +160,6 @@ class Api::V1::GroupController < ApplicationController
 
      # グループ引数
      def group_params
-      params.require(:group).permit(:group_name, :group_description)
+      params.require(:group).permit(:group_name, :group_description,:id,:updated_user)
     end
   end
