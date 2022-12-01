@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import I18n from "i18n-js";
 import "../../bundles/i18n/ja.js";
-import { Button, Input, Table, Space, Popconfirm, Tooltip } from "antd";
+import { Button, Input, Space, Table, Popconfirm, Tooltip } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
